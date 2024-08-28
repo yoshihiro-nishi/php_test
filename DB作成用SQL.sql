@@ -74,3 +74,15 @@ INSERT INTO `prefecture_mst` (prefecture_id, prefecture_name) VALUES
   (45,'宮崎県'),
   (46,'鹿児島県'),
   (47,'沖縄県');
+  
+-- 職種マスタのデータ挿入
+INSERT INTO `job_mst` (job_id, job_name) VALUES
+  (1,'総合職'),
+  (2,'事務職'),
+  (3,'技術職');
+  
+-- 学歴マスタのデータ挿入
+INSERT INTO `education_mst` (education_id, education_name) VALUES
+  (1,'大卒'),
+  (2,'院卒'),
+  (3,'高卒');
