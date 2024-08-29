@@ -1,74 +1,152 @@
 <?php
-  $pageFlg = 0;//ページ遷移の変数
+  //ページ遷移の変数
+  $pageFlg = 0;
   
-  if(!empty($_POST["btn_confirm"])){//確認画面
+  //確認ボタン押下
+  if(!empty($_POST["btn_confirm"])){
   
     // バリデーションチェック
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-      // フォームデータを取得
-      $user = htmlspecialchars($_POST["user"]);
-      $user_kana = htmlspecialchars($_POST["user_kana"]);
-      //$gender = htmlspecialchars($_POST["gender"]);
-      $education = htmlspecialchars($_POST["education"]);
-      $postcode = htmlspecialchars($_POST["postcode"]);
-      $prefecture = htmlspecialchars($_POST["prefecture"]);
-      $city = htmlspecialchars($_POST["city"]);
-      $email = htmlspecialchars($_POST["email"]);
-      //$jobs[] = htmlspecialchars($_POST["jobs"]);
-      $etc = htmlspecialchars($_POST["etc"]);
-      //$privacy_policy = htmlspecialchars($_POST["privacy_policy"]);
-  
-      // 項目名の設定
-      $user_name = "名前";
-      $user_kana_name = "名前（カナ）";
-      //$gender_name = "性別";
-      $education_name = "最終学歴";
-      $postcode_name = "郵便番号";
-      $prefecture_name = "都道府県";
-      $city_name = "市区町村";
-      $email_name = "メールアドレス";
-      //$jobs[] = "希望職種";
-      $etc_name = "その他要望など";
-      //$privacy_policy = "プライバシーポリシー";
-  
-      // バリデーション
-      $errors = array();
-      emptyCheck($user, $user_name, $errors);
-      lengthCheck($user,$user_name,60, $errors);
-      emptyCheck($user_kana,$user_kana_name, $errors);
-      lengthCheck($user_kana,$user_kana_name, 60, $errors);
-      kanaCheck($user_kana,$user_kana_name, $errors);
+    $errors = array();
+    validateCheck($errors);
 
-
-      emailFormatCheck($email, $email_name, $errors);
-
-      if (count($errors) != 0){
-        for( $i = 0; $i < count($errors); $i++ ){
-        echo $errors[$i];
+    if (count($errors) != 0){
+      // エラーがある場合、赤文字でエラーを表示
+      for( $i = 0; $i < count($errors); $i++ ){
+        echo "<font color='red'>$errors[$i]</font>";
         echo "<br>";
-        }
-      }
-       else {
-          // バリデーションが成功した場合
-          $pageFlg = 1;
       }
     }
+    else {
+      // エラーがない場合
+        $pageFlg = 1;
+    }
+    
   }
-  if(!empty($_POST["btn_submit"])){//完了画面
-      $pageFlg = 2;
-   }
-  if(!empty($_POST["btn_close"])){//閉じる画面
-       
-   }
   
-  function emptyCheck($val, $valname, &$errors): void
+  //完了ボタン押下
+  if(!empty($_POST["btn_submit"])){
+      $pageFlg = 2;
+
+      // 登録情報の設定
+      $user = $_POST["user"];
+      $user_kana = $_POST["user_kana"];
+      $gender = $_POST["gender"];
+      $birthday = $_POST["birthday"];
+      $education = $_POST["education"];
+      $postcode = $_POST["postcode"];
+      $prefecture = $_POST["prefecture"];
+      $city = $_POST["city"];
+      $email = $_POST["email"];
+      $job = implode("、", $_POST["jobs"]);
+      $userfile = $_POST["userfile"];
+      $etc = $_POST["etc"];
+
+      // DB登録
+
+
+
+
+
+  }
+
+  //閉じるボタン押下
+  if(!empty($_POST["btn_close"])){
+       
+  }
+  
+  function validateCheck(&$errors): void
+  // バリデーションチェック
+  {
+    $user_name = "名前";
+    $user = $_POST["user"];
+    checkEmpty($user, $user_name, $errors);
+    checkLength($user,$user_name, 60, $errors);
+
+    $user_kana_name = "名前（カナ）";
+    $user_kana = $_POST["user_kana"];
+    checkEmpty($user_kana,$user_kana_name, $errors);
+    checkLength($user_kana,$user_kana_name, 60, $errors);
+    checkKana($user_kana,$user_kana_name, $errors);
+ 
+    $gender_name = "性別";
+    // 性別必須チェック
+    if(isset($_POST['gender'])) {
+      $gender = $_POST["gender"];
+      // 性別フォーマットチェック
+      if(!($gender == 1 or $gender == 2)) {
+        $errors[] = "$gender_name の形式が不正です。";
+      }
+    } else {
+      $errors[] = "$gender_name は必須です。";
+    }
+
+    $birthday_name = "生年月日";
+    $birthday = $_POST["birthday"];
+    checkEmpty($birthday, $birthday_name, $errors);
+    if(!empty($_POST['birthday'])) {
+      echo $_POST['birthday'];
+      checkDateFormat($birthday, $birthday_name, $errors);
+      checkExistDate($birthday, $birthday_name, $errors);
+    }
+    
+    $education_name = "最終学歴";
+    $education = $_POST["education"];
+    checkTblData($education, $education_name, "education_mst", "education_name", $errors);
+
+    $postcode_name = "郵便番号";
+    $postcode = $_POST["postcode"];
+    checkEmpty($postcode, $postcode_name, $errors);
+    checkLength($postcode,$postcode_name, 8, $errors);
+
+    $prefecture_name = "都道府県";
+    $prefecture = $_POST["prefecture"];
+    checkEmpty($prefecture, $prefecture_name, $errors);
+    checkTblData($prefecture, $prefecture_name, "prefecture_mst", "prefecture_name", $errors);
+
+    $city_name = "市区町村";
+    $city = $_POST["city"];
+    checkEmpty($city, $city_name, $errors);
+    checkLength($city,$city_name, 100, $errors);
+ 
+    $email_name = "メールアドレス";
+    $email = $_POST["email"];
+    checkEmpty($email, $email_name, $errors);
+    checkLength($email,$email_name, 100, $errors);
+    checkMailFormat($email, $email_name, $errors);
+    
+    $job_name = "希望職種";
+    if (isset($_POST['jobs'])) {
+      $jobs = array();
+      $jobs = $_POST["jobs"];
+      for( $i = 0; $i < count($jobs); $i++ ){
+        checkTblData($jobs[$i], $job_name, "job_mst", "job_name", $errors);
+      }
+    } else {
+      $errors[] = "$job_name は必須です。";
+    }
+    
+    $userfile_name = "履歴書";
+    $userfile = $_POST["userfile"];
+    checkEmpty($userfile, $userfile_name, $errors);
+    
+    $etc_name = "その他要望など";
+    $etc = $_POST["etc"];
+    checkLength($etc,$etc_name, 2000, $errors);
+
+    $privacy_policy_name = "プライバシーポリシー";
+    if (!isset($_POST['privacy_policy'])) {
+      $errors[] = "$privacy_policy_name は同意しないと応募できません。";
+    }
+  }
+
+  function checkEmpty($val, $valname, &$errors): void
   // 必須チェック
   {
     if (empty($val)) {
       $errors[] = "$valname は必須です。";
     } 
   }
-  function lengthCheck($val, $valname, $length, &$errors): void
+  function checkLength($val, $valname, $length, &$errors): void
   // 桁数チェック
   {
     if(mb_strlen ($val) > $length){
@@ -76,7 +154,7 @@
     }
   }
 
-  function kanaCheck($val, $valname, &$errors): void
+  function checkKana($val, $valname, &$errors): void
   // カタカナチェック
   {
     if (!preg_match("/\A[ァ-ヿ]+\z/u", $val)) {
@@ -84,11 +162,42 @@
     } 
   }
   
-  function emailFormatCheck($val, $valname, &$errors): void
+  function checkMailFormat($val, $valname, &$errors): void
   // メールアドレスフォーマットチェック
   {
     if (!filter_var($val, FILTER_VALIDATE_EMAIL)) {
       $errors[] = "$valname の形式が不正です。";
+    }
+  }
+  
+  function checkDateFormat($val, $valname, &$errors): void
+  // 日付フォーマットチェック
+  {
+    if(preg_match('/\A[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}\z/', $val) == false){
+      $errors[] = "$valname の形式が不正です。";
+    }
+  }
+  
+  function checkExistDate($val, $valname, &$errors): void
+  // 日付存在チェック
+  {
+    list($year, $month, $day) = explode('-', $val);
+
+    if(checkdate($month, $day, $year) == false){
+      $errors[] = "$valname の日付は存在しません。";
+    }
+  }
+
+  function checkTblData($val, $valname, $tblname, $column, &$errors)
+  // DBの存在チェック
+  {
+    $pdo = new PDO("mysql:host=localhost;dbname=localtestdb", "root", "");
+    $sql = "SELECT COUNT(*) AS cnt FROM $tblname WHERE $column = '$val'";
+    $education = $pdo->prepare($sql);
+    $education -> execute();
+    $educationRow = $education -> fetch(PDO::FETCH_ASSOC );
+    if($educationRow['cnt'] == 0) {
+      $errors[] = "存在しない $valname が設定されています。";
     }
   }
 ?>
@@ -112,12 +221,12 @@
 
   <br><br>
     性別<br>
-  <input type="radio" name="gender" value="男性">男性<br>
-  <input type="radio" name="gender" value="女性">女性
+  <input type="radio" name="gender" value="1" <?php if (isset($_POST['gender']) && $_POST['gender'] == "1") echo 'checked'; ?>>男性<br>
+  <input type="radio" name="gender" value="2" <?php if (isset($_POST['gender']) && $_POST['gender'] == "2") echo 'checked'; ?>>女性
 
   <br><br>
     生年月日<br>
-<!-- 生年月日　カレンダーを実装する-->
+<input name="birthday" type="date" value="<?php if(!empty($_POST["birthday"])){echo $_POST["birthday"];}?>" />
 
   <br><br>
     最終学歴<br>
@@ -136,7 +245,6 @@
       }
     ?>
   </select>
-<!-- 最終学歴　DBから取得する-->
 
   <br><br>
     自宅住所<br>
@@ -157,7 +265,6 @@
       }
     ?>
   </select>
-      <!-- 都道府県　DBから取得する-->
   <input type="text" placeholder="市区町村" name="city" value ="<?php if(!empty($_POST["city"])){echo $_POST["city"];}?>">
 
   <br><br>
@@ -183,7 +290,7 @@
 
   <br>
     履歴書<br>
-<!-- 履歴書　ファイルを選択を実装する-->
+    <input name="userfile" type="file" />
 
   <br><br>
     その他要望など<br>
@@ -212,7 +319,13 @@
   <?php echo $_POST["user_kana"] ;?> 
   <br><br>
     性別　：　
-  <?php echo $_POST["gender"] ;?> 
+  <?php 
+    if($_POST['gender'] == 1){echo "男性";}
+    elseif($_POST['gender'] == 2){echo "女性";}
+  ?>
+  <br><br>
+    生年月日　：　
+  <?php echo $_POST["birthday"] ;?> 
   <br><br>
     学歴　：　
   <?php echo $_POST["education"] ;?> 
@@ -241,6 +354,7 @@
   <input type = "hidden" name = "user" value = "<?php echo $_POST["user"] ;?>">
   <input type = "hidden" name = "user_kana" value = "<?php echo $_POST["user_kana"] ;?>">
   <input type = "hidden" name = "gender" value = "<?php echo $_POST["gender"] ;?>">
+  <input type = "hidden" name = "birthday" value = "<?php echo $_POST["birthday"] ;?>">
   <input type = "hidden" name = "education" value = "<?php echo $_POST["education"] ;?>">
   <input type = "hidden" name = "postcode" value = "<?php echo $_POST["postcode"] ;?>">
   <input type = "hidden" name = "prefecture" value = "<?php echo $_POST["prefecture"] ;?>">
