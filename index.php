@@ -23,35 +23,30 @@
     
   }
   
-  //完了ボタン押下
+  //応募するボタン押下
   if(!empty($_POST["btn_submit"])){
+
+
+    $return = insData();
+
+    if ($return) {
       $pageFlg = 2;
+      // DB登録完了時
 
-      // 登録情報の設定
-      $user = $_POST["user"];
-      $user_kana = $_POST["user_kana"];
-      $gender = $_POST["gender"];
-      $birthday = $_POST["birthday"];
-      $education = $_POST["education"];
-      $postcode = $_POST["postcode"];
-      $prefecture = $_POST["prefecture"];
-      $city = $_POST["city"];
-      $email = $_POST["email"];
-      $job = implode("、", $_POST["jobs"]);
-      $userfile = $_POST["userfile"];
-      $etc = $_POST["etc"];
+      // 自動メールを送信する。
+    
 
-      // DB登録
-
-
-
-
+    }
+    else {
+      // DB登録時にエラーが出た場合
+      echo $db->error;
+    }
 
   }
 
   //閉じるボタン押下
   if(!empty($_POST["btn_close"])){
-       
+    echo "<script type='text/javascript'>window.close();</script>";
   }
   
   function validateCheck(&$errors): void
@@ -84,7 +79,6 @@
     $birthday = $_POST["birthday"];
     checkEmpty($birthday, $birthday_name, $errors);
     if(!empty($_POST['birthday'])) {
-      echo $_POST['birthday'];
       checkDateFormat($birthday, $birthday_name, $errors);
       checkExistDate($birthday, $birthday_name, $errors);
     }
@@ -94,9 +88,13 @@
     checkTblData($education, $education_name, "education_mst", "education_name", $errors);
 
     $postcode_name = "郵便番号";
-    $postcode = $_POST["postcode"];
+    $postcode = mb_convert_kana($_POST["postcode"], 'a', 'UTF-8'); // 全角の場合、半角に変換
     checkEmpty($postcode, $postcode_name, $errors);
     checkLength($postcode,$postcode_name, 8, $errors);
+    // 郵便番号フォーマットチェック
+    if (!preg_match("/\A\d{3}[-]\d{4}\z/", $postcode)) {
+      $errors[] = "$postcode_name の書式に誤りがあります。";
+    }
 
     $prefecture_name = "都道府県";
     $prefecture = $_POST["prefecture"];
@@ -107,7 +105,7 @@
     $city = $_POST["city"];
     checkEmpty($city, $city_name, $errors);
     checkLength($city,$city_name, 100, $errors);
- 
+
     $email_name = "メールアドレス";
     $email = $_POST["email"];
     checkEmpty($email, $email_name, $errors);
@@ -124,11 +122,11 @@
     } else {
       $errors[] = "$job_name は必須です。";
     }
-    
+
     $userfile_name = "履歴書";
-    $userfile = $_POST["userfile"];
-    checkEmpty($userfile, $userfile_name, $errors);
-    
+    $userfile = $_FILES["userfile"];
+    checkFile($userfile, $userfile_name, $errors);
+
     $etc_name = "その他要望など";
     $etc = $_POST["etc"];
     checkLength($etc,$etc_name, 2000, $errors);
@@ -137,6 +135,10 @@
     if (!isset($_POST['privacy_policy'])) {
       $errors[] = "$privacy_policy_name は同意しないと応募できません。";
     }
+    
+    // 履歴書ファイルをアップロードする
+    $upfile_name = $userfile['name']; // ファイル名
+    move_uploaded_file( $userfile['tmp_name'], 'C:\testfile\\' . $upfile_name); // 「C:\testfile\ファイル名」に保存する
   }
 
   function checkEmpty($val, $valname, &$errors): void
@@ -187,6 +189,26 @@
       $errors[] = "$valname の日付は存在しません。";
     }
   }
+  
+  function checkFile($file, $file_name, &$errors): void
+  // ファイルチェック
+  {
+    // 必須チェック
+    checkEmpty($file["name"], $file_name, $errors);
+    
+    // ファイル形式チェック
+    if (!(str_ends_with($file["name"], ".pdf") or
+          str_ends_with($file["name"], ".PDF") or
+          str_ends_with($file["name"], ".docx") or
+          str_ends_with($file["name"], ".DOCX"))) {
+      $errors[] = "$file_name のファイルの形式が不正です。";
+    }
+
+    // ファイルサイズチェック
+    if ($file["size"] > 1048576) {
+      $errors[] = "$file_name のファイルサイズは1MB以下でアップロードしてください。";
+    }
+  }
 
   function checkTblData($val, $valname, $tblname, $column, &$errors)
   // DBの存在チェック
@@ -200,6 +222,40 @@
       $errors[] = "存在しない $valname が設定されています。";
     }
   }
+
+  function insData()
+  // DBの存在チェック
+  {
+    // 登録情報の設定
+    $user = $_POST["user"];
+    $user_kana = $_POST["user_kana"];
+    $gender = $_POST["gender"];
+    $birthday = $_POST["birthday"];
+    $education = $_POST["education"];
+    $postcode = str_replace("-","",$_POST["postcode"]);
+    $prefecture = $_POST["prefecture"];
+    $city = $_POST["city"];
+    $email = $_POST["email"];
+    $job = $_POST["job"];
+    $userfile = $_POST["userfile"];
+    $etc = $_POST["etc"];
+
+    // DB登録
+    $db = new mysqli("localhost", "root", "", "localtestdb");
+    $statement = $db->prepare(
+      "INSERT INTO oubo_info
+        (`username`,`username_kana`,`gender`,`birthday`,`education`,`postcode`,`prefecture`,`city`,`email`,`job`,`userfile`,`etc`)
+        VALUES
+        (?,?,?,?,?,?,?,?,?,?,?,?);"
+    );
+    if (!$statement) {
+        die($db->error);
+    }
+    $statement->bind_param("ssisssssssss", $user, $user_kana, $gender, $birthday, $education, $postcode, $prefecture, $city, $email, $job, $userfile, $etc); 
+    //$statement->bind_param("sib", $oubo_id, $user, $user_kana, $gender, $birthday, $education, $postcode, $prefecture, $city, $email, $job, $userfile, $etc); 
+
+    return $statement->execute();
+  }
 ?>
 
 <!DOCTYPE html>
@@ -210,7 +266,7 @@
 <body>
 <?php if($pageFlg === 0 ) :?>
   <font size='7'>採用応募入力画面</font>
-  <form method = "POST" action="index.php">
+  <form method = "POST" action="index.php" enctype="multipart/form-data">
   <br>
     名前<br>
   <input type="text" placeholder="名前を入力" name="user" value ="<?php if(!empty($_POST["user"])){echo $_POST["user"];}?>">
@@ -310,7 +366,7 @@
 
 <?php if($pageFlg === 1 ) :?>
   <font size='7'>採用応募確認画面</font>
-  <form method = "POST" action="index.php">
+  <form method = "POST" action="index.php" enctype="multipart/form-data">
   <br><br>
     名前　：　
   <?php echo $_POST["user"] ;?>
@@ -325,7 +381,7 @@
   ?>
   <br><br>
     生年月日　：　
-  <?php echo $_POST["birthday"] ;?> 
+  <?php echo date("Y/m/d", strtotime($_POST["birthday"])) ;?> 
   <br><br>
     学歴　：　
   <?php echo $_POST["education"] ;?> 
@@ -341,9 +397,12 @@
     希望職種　：　
   <?php
     if (isset($_POST['jobs']) && is_array($_POST['jobs'])) {
-      echo $job = implode("、", $_POST["jobs"]);
+      echo $jobs = implode("、", $_POST["jobs"]);
     }
   ;?> 
+  <br><br>
+    履歴書　：　
+  <?php print_r($_FILES["userfile"]["name"]);?> 
   <br><br>
   その他要望など　：　
   <?php echo $_POST["etc"] ;?> 
@@ -360,7 +419,10 @@
   <input type = "hidden" name = "prefecture" value = "<?php echo $_POST["prefecture"] ;?>">
   <input type = "hidden" name = "city" value = "<?php echo $_POST["city"] ;?>">
   <input type = "hidden" name = "email" value = "<?php echo $_POST["email"] ;?>">
-  <input type = "hidden" name = "jobs" value = "<?php echo $_POST["jobs"] ;?>">
+  <input type = "hidden" name = "job" value = "<?php  if (isset($_POST['jobs']) && is_array($_POST['jobs'])) {
+      echo implode("、", $_POST["jobs"]);
+    } ;?>">
+  <input type = "hidden" name = "userfile" value = "<?php echo $_FILES["userfile"] ;?>">
   <input type = "hidden" name = "etc" value = "<?php echo $_POST["etc"] ;?>">
   </form>
 <?php endif; ?>
@@ -368,6 +430,7 @@
 
 <?php if($pageFlg === 2 ) :?>
   <font size='7'>採用応募完了画面</font>
+  <form method = "POST" action="index.php">
   <br><br>
     応募が完了しました。
     <br>
@@ -376,6 +439,7 @@
     ご確認ください。
   <br><br>
   <input type = "submit" name = "btn_close" value = "閉じる">
+  </form>
 <?php endif; ?>
 
 </body>
