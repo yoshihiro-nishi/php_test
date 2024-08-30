@@ -86,16 +86,16 @@ INSERT INTO `education_mst` (education_id, education_name) VALUES
   (1,'大卒'),
   (2,'院卒'),
   (3,'高卒');
-
+  
 -- 応募情報管理の作成
 CREATE TABLE oubo_info (
-	oubo_id BIGINT NOT NULL PRIMARY KEY comment '応募ID',
+	oubo_id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT comment '応募ID',
     username VARCHAR(60) NOT NULL comment '名前',
     username_kana VARCHAR(60) NOT NULL comment 'フリガナ',
     gender ENUM('man','woman') NOT NULL comment '性別',
     birthday DATE NOT NULL comment '生年月日',
     education VARCHAR(20) NOT NULL comment '最終学歴',
-    postcode TINYINT NOT NULL comment '郵便番号',
+    postcode MEDIUMINT NOT NULL comment '郵便番号',
     prefecture VARCHAR(8) NOT NULL comment '都道府県ID',
     city VARCHAR(100) NOT NULL comment '市区町村',
     email VARCHAR(100) NOT NULL comment 'メールアドレス',
