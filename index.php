@@ -1,10 +1,13 @@
 <?php
+  session_start();
   //ページ遷移の変数
   $pageFlg = 0;
   
   //確認ボタン押下
   if(!empty($_POST["btn_confirm"])){
   
+    $_SESSION["etc"] = $_POST["etc"];
+    $_SESSION['file'] = $_FILES["userfile"]; //セッション変数にファイル情報を登録
     // バリデーションチェック
     $errors = array();
     validateCheck($errors);
@@ -19,10 +22,20 @@
     else {
       // エラーがない場合
         $pageFlg = 1;
-    }
     
+      // 履歴書ファイルをアップロードする
+      $userfileUpPass = "C:\\testfile\\". $_POST["user"] . "_" . date('YmdHis') . $_SESSION["file"]["name"];
+      move_uploaded_file( $_SESSION["file"]["tmp_name"], $userfileUpPass ); // 「C:\testfile\名前_日付_ファイル名」に保存する
+      $_SESSION['userfileUpPass'] = $userfileUpPass;
+    }
   }
-  
+
+  //修正するボタン押下
+  if(!empty($_POST["back"])){
+    // アップロードした履歴書ファイルを削除する
+    unlink($_SESSION['userfileUpPass']);
+  }
+
   //応募するボタン押下
   if(!empty($_POST["btn_submit"])){
 
@@ -32,16 +45,37 @@
     if ($return) {
       $pageFlg = 2;
       // DB登録完了時
-
       // 自動メールを送信する。
-    
-
+      /** 内部文字エンコーディングをUTF-8に設定します*/
+      mb_language('ja');
+      mb_internal_encoding('UTF-8');
+       
+      /** 宛先メールアドレス*/
+      $to = $_POST["email"]; 
+      /**タイトル */
+      $subject = '【株式会社〇〇〇〇】応募完了のご確認'; 
+      /**本文 */
+      $body = $_POST["user"] . '様<br><br>
+      株式会社〇〇〇〇です。<br>
+      この度は、弊社求人にご応募いただき、誠にありがとうございます。<br>
+      応募書類を、' . date('Y/m/d') . 'に受領いたしました。<br><br>
+      書類選考の結果は、一週間以内にメールにてお知らせいたします。<br><br>
+      株式会社△△ 採用担当 ××<br>
+      メールアドレス：〇〇〇〇';
+       
+      /**送信者情報を設定します */
+      $sender_name = '株式会社●●';  
+      $from = 'send_address@gmail.com';  
+      
+      /**ヘッダー情報 */
+      $headers = 'From: ' . mb_encode_mimeheader($sender_name). ' <' . $from. '>';
+      mb_send_mail($to, $subject, $body, $headers);
+      
     }
     else {
       // DB登録時にエラーが出た場合
       echo $db->error;
     }
-
   }
 
   //閉じるボタン押下
@@ -62,7 +96,7 @@
     checkEmpty($user_kana,$user_kana_name, $errors);
     checkLength($user_kana,$user_kana_name, 60, $errors);
     checkKana($user_kana,$user_kana_name, $errors);
- 
+
     $gender_name = "性別";
     // 性別必須チェック
     if(isset($_POST['gender'])) {
@@ -135,10 +169,6 @@
     if (!isset($_POST['privacy_policy'])) {
       $errors[] = "$privacy_policy_name は同意しないと応募できません。";
     }
-    
-    // 履歴書ファイルをアップロードする
-    $upfile_name = $userfile['name']; // ファイル名
-    move_uploaded_file( $userfile['tmp_name'], 'C:\testfile\\' . $upfile_name); // 「C:\testfile\ファイル名」に保存する
   }
 
   function checkEmpty($val, $valname, &$errors): void
@@ -237,8 +267,8 @@
     $city = $_POST["city"];
     $email = $_POST["email"];
     $job = $_POST["job"];
-    $userfile = $_POST["userfile"];
     $etc = $_POST["etc"];
+    $userfileUpPass = $_SESSION['userfileUpPass'];
 
     // DB登録
     $db = new mysqli("localhost", "root", "", "localtestdb");
@@ -251,8 +281,7 @@
     if (!$statement) {
         die($db->error);
     }
-    $statement->bind_param("ssisssssssss", $user, $user_kana, $gender, $birthday, $education, $postcode, $prefecture, $city, $email, $job, $userfile, $etc); 
-    //$statement->bind_param("sib", $oubo_id, $user, $user_kana, $gender, $birthday, $education, $postcode, $prefecture, $city, $email, $job, $userfile, $etc); 
+    $statement->bind_param("ssisssssssss", $user, $user_kana, $gender, $birthday, $education, $postcode, $prefecture, $city, $email, $job, $userfileUpPass, $etc); 
 
     return $statement->execute();
   }
@@ -343,19 +372,18 @@
         echo "※DBに接続できませんでした。";
       }
     ?>
-
+    <br>
   <br>
     履歴書<br>
     <input name="userfile" type="file" />
 
   <br><br>
     その他要望など<br>
-  <textarea cols="50" rows="5" placeholder = "その他要望などを入力" name="etc"  cols="50" rows="5" 
-    value ="<?php if(!empty($_POST["etc"])){echo $_POST["etc"];}?>"></textarea>
+  <textarea cols="50" rows="5" placeholder = "その他要望などを入力" name="etc"  cols="50" rows="5"><?php if(isset($_POST['etc'])) print($_SESSION["etc"]);?></textarea>
 
   <br><br>
     プライバシーポリシー<br>
-    <input type="checkbox" name="privacy_policy" value="同意する"> 同意する
+    <input type="checkbox" name="privacy_policy[]" value="同意する" <?php if(isset($_POST['privacy_policy'])&&in_array("同意する",$_POST['privacy_policy'])) echo 'checked'?>> 同意する
 
   <br><br>
   <input type = "submit" name = "btn_confirm"  value = "入力内容の確認" >
@@ -422,7 +450,6 @@
   <input type = "hidden" name = "job" value = "<?php  if (isset($_POST['jobs']) && is_array($_POST['jobs'])) {
       echo implode("、", $_POST["jobs"]);
     } ;?>">
-  <input type = "hidden" name = "userfile" value = "<?php echo $_FILES["userfile"] ;?>">
   <input type = "hidden" name = "etc" value = "<?php echo $_POST["etc"] ;?>">
   </form>
 <?php endif; ?>
