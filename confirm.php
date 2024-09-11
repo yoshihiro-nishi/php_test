@@ -62,6 +62,7 @@
       echo implode("、", $_SESSION["jobs"]);
     } ;?>">
   <input type = "hidden" name = "etc" value = "<?php echo $_SESSION["etc"] ;?>">
+  <input type = "hidden" name = "page" value = "1">
   </form>
 </body>
 </html>

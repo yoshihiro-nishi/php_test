@@ -3,31 +3,27 @@ session_start();
 
 $btn = new BtnClass();
 $btn -> btnCheck();
+
+class ConstClass {
+  const indexPage = "0";
+  const confirmPage = "1";
+  const sendPage = "2";
+}
+
 class BtnClass
 {
   function btnCheck() {
 
-    //確認ボタン押下
+    // 確認ボタン押下
     if(!empty($_POST["btn_confirm"])) {
     
-      $sessionAction = new SessionAction();
-      $sessionAction -> setSessionData("user");
-      $sessionAction -> setSessionData("user_kana");
-      $sessionAction -> setSessionData("gender");
-      $sessionAction -> setSessionData("birthday");
-      $sessionAction -> setSessionData("education");
-      $sessionAction -> setSessionData("postcode");
-      $sessionAction -> setSessionData("prefecture");
-      $sessionAction -> setSessionData("city");
-      $sessionAction -> setSessionData("email");
-      $sessionAction -> setSessionData("jobs");
-      $sessionAction -> setSessionData("etc");
-      $sessionAction -> setSessionData("privacy_policy");
-      $_SESSION["file"] = $_FILES["userfile"];
-      
-      // バリデーションチェック
-      $errors = array();
       $validate = new Validate();
+      $validate -> checkFromPage("btn_confirm");
+      
+      $sessionAction = new SessionAction();
+      $sessionAction -> setSessionAllData();
+      
+      $errors = array();
       $validate -> validateCheck($errors);
       
       if (count($errors) != 0) {
@@ -39,9 +35,6 @@ class BtnClass
         require_once('index.php');
       }
       else {
-        // エラーがない場合
-          $pageFlg = 1;
-      
         // 履歴書ファイルをアップロードする
         $userfileUpPass = "C:\\testfile\\". date('YmdHis') . "_" .$_SESSION["file"]["name"];
         move_uploaded_file( $_SESSION["file"]["tmp_name"], $userfileUpPass ); // 「C:\testfile\名前_日付_ファイル名」に保存する
@@ -50,58 +43,85 @@ class BtnClass
         require_once('confirm.php');
       }
     }
-  
-    //修正するボタン押下
-    if(!empty($_POST["back"])) {
+    // 修正するボタン押下
+    else if(!empty($_POST["back"])) {
       // アップロードした履歴書ファイルを削除する
       unlink($_SESSION['userfileUpPass']);
       require_once('index.php');
     }
+    // 応募するボタン押下
+    else if(!empty($_POST["btn_submit"])) {
   
-    //応募するボタン押下
-    if(!empty($_POST["btn_submit"])) {
-  
-  
-      $return = insData();
-  
-      if ($return) {
-        require_once('send.php');
-        
+      $validate = new Validate();
+      $validate -> checkFromPage("btn_submit");
+
+      $errors = array();
+      $validate -> validateCheck($errors);
+      
+      if (count($errors) != 0) {
+        for( $i = 0; $i < count($errors); $i++ ) {
+          echo "<font color='red'>$errors[$i]</font>";
+          echo "<br>";
+        }
+        require_once('index.php');
       }
       else {
-        // DB登録時にエラーが出た場合
+        // 応募情報登録
+        $return = insData();
+    
+        if ($return) {
+          require_once('send.php');
+          
+        }
+        else {
+          echo "<font color='red'>DB登録時にエラーが発生しました。</font>";
+          echo "<br>";
+          exit;
+        }
       }
     }
-  
-    //閉じるボタン押下
-    if(!empty($_POST["btn_close"])) {
+    // 閉じるボタン押下
+    else if(!empty($_POST["btn_close"])) {
       echo "<script type='text/javascript'>window.close();</script>";
       $sessionAction = new SessionAction();
-      $sessionAction -> clearSessionData("user");
-      $sessionAction -> clearSessionData("user_kana");
-      $sessionAction -> clearSessionData("gender");
-      $sessionAction -> clearSessionData("birthday");
-      $sessionAction -> clearSessionData("education");
-      $sessionAction -> clearSessionData("postcode");
-      $sessionAction -> clearSessionData("prefecture");
-      $sessionAction -> clearSessionData("city");
-      $sessionAction -> clearSessionData("email");
-      $sessionAction -> clearSessionData("jobs");
-      $sessionAction -> clearSessionData("etc");
-      $sessionAction -> clearSessionData("privacy_policy");
-      $sessionAction -> clearSessionData("file");
+      $sessionAction -> clearSessionAllData();
 
       require_once('index.php');
+    }
+    else {
+      echo "<font color='red'>不正なページ操作が行われました。</font>";
+      echo "<br>";
+      exit;
     }
   }
 }
 
 class SessionAction {
+  
+  // 全項目のセッションデータ設定
+  function setSessionAllData() {
+    $sessionAction = new SessionAction();
+    $sessionAction -> setSessionData("user");
+    $sessionAction -> setSessionData("user_kana");
+    $sessionAction -> setSessionData("gender");
+    $sessionAction -> setSessionData("birthday");
+    $sessionAction -> setSessionData("education");
+    $sessionAction -> setSessionData("postcode");
+    $sessionAction -> setSessionData("prefecture");
+    $sessionAction -> setSessionData("city");
+    $sessionAction -> setSessionData("email");
+    $sessionAction -> setSessionData("jobs");
+    $sessionAction -> setSessionData("etc");
+    $sessionAction -> setSessionData("privacy_policy");
+    $_SESSION["file"] = $_FILES["userfile"];
+  }
+  
+  // セッションデータの設定
   function setSessionData($valname) {
     if(!empty($_POST[$valname]) && !is_array($_POST[$valname])) {
       $_SESSION[$valname] = htmlspecialchars($_POST[$valname], ENT_QUOTES, 'UTF-8');
     }
-    else if(!empty($_POST[$valname])) {
+    else if(!empty($_POST[$valname]) && isset($_POST[$valname])) {
       $vals = array();
       for( $i = 0; $i < count($_POST[$valname]); $i++ ) {
         $vals[] = htmlspecialchars($_POST[$valname][$i], ENT_QUOTES, 'UTF-8');
@@ -109,17 +129,38 @@ class SessionAction {
       $_SESSION[$valname] = $vals;
     }
     else {
-      $_SESSION[$valname] = "";
+      $_SESSION[$valname] = null;
     }
   }
+
+  // 全項目のセッションデータクリア
+  function clearSessionAllData() {
+    $sessionAction = new SessionAction();
+    $sessionAction -> clearSessionData("user");
+    $sessionAction -> clearSessionData("user_kana");
+    $sessionAction -> clearSessionData("gender");
+    $sessionAction -> clearSessionData("birthday");
+    $sessionAction -> clearSessionData("education");
+    $sessionAction -> clearSessionData("postcode");
+    $sessionAction -> clearSessionData("prefecture");
+    $sessionAction -> clearSessionData("city");
+    $sessionAction -> clearSessionData("email");
+    $sessionAction -> clearSessionData("jobs");
+    $sessionAction -> clearSessionData("etc");
+    $sessionAction -> clearSessionData("privacy_policy");
+    $sessionAction -> clearSessionData("file");
+  }
+
+  // セッションデータのクリア
   function clearSessionData($valname) {
-    $_SESSION[$valname] = "";
+    $_SESSION[$valname] = null;
   }
 }
+
 class validate
 {
-  function validateCheck(&$errors) : void
   // バリデーションチェック
+  function validateCheck(&$errors) : void
   {
     $user_name = "名前";
     $user = $_SESSION["user"];
@@ -206,16 +247,17 @@ class validate
     }
   }
 
-  function checkEmpty($val, $valname, $errors) : array
   // 必須チェック
+  function checkEmpty($val, $valname, $errors) : array
   {
     if (empty($val)) {
       $errors[] = "$valname は必須です。";
     }
     return $errors;
   }
-  function checkLength($val, $valname, $length, $errors) : array
+
   // 桁数チェック
+  function checkLength($val, $valname, $length, $errors) : array
   {
     if(mb_strlen ($val) > $length) {
       $errors[] = "$valname は $length 桁以下で入力してください。";
@@ -223,8 +265,8 @@ class validate
     return $errors;
   }
 
-  function checkKana($val, $valname, &$errors) : array
   // カタカナチェック
+  function checkKana($val, $valname, &$errors) : array
   {
     if (!preg_match("/\A[ァ-ヿ]+\z/u", $val)) {
       $errors[] = "$valname はカタカナで入力してください。";
@@ -232,8 +274,8 @@ class validate
     return $errors;
   }
   
-  function checkMailFormat($val, $valname, &$errors) : array
   // メールアドレスフォーマットチェック
+  function checkMailFormat($val, $valname, &$errors) : array
   {
     if (!filter_var($val, FILTER_VALIDATE_EMAIL)) {
       $errors[] = "$valname の形式が不正です。";
@@ -241,8 +283,8 @@ class validate
     return $errors;
   }
   
-  function checkDateFormat($val, $valname, &$errors) : array
   // 日付フォーマットチェック
+  function checkDateFormat($val, $valname, &$errors) : array
   {
     if(preg_match('/\A[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}\z/', $val) == false) {
       $errors[] = "$valname の形式が不正です。";
@@ -250,8 +292,8 @@ class validate
     return $errors;
   }
   
-  function checkExistDate($val, $valname, &$errors) : array
   // 日付存在チェック
+  function checkExistDate($val, $valname, &$errors) : array
   {
     list($year, $month, $day) = explode('-', $val);
 
@@ -261,8 +303,8 @@ class validate
     return $errors;
   }
   
+  // ファイル項目チェック
   function checkFile($file, $file_name, &$errors) : array
-  // ファイルチェック
   {
     // 必須チェック
     $errors = $this -> checkEmpty($file["name"], $file_name, $errors);
@@ -282,8 +324,8 @@ class validate
     return $errors;
   }
 
+  // マスタデータの存在チェック
   function checkTblData($val, $valname, $tblname, $column, $errors) : array
-  // DBの存在チェック
   {
     $pdo = new PDO("mysql:host=localhost;dbname=localtestdb", "root", "");
     $sql = "SELECT COUNT(*) AS cnt FROM $tblname WHERE $column = '$val'";
@@ -295,7 +337,31 @@ class validate
     }
     return $errors;
   }
+
+  // 遷移元画面チェック
+  function checkFromPage($pagename) : void
+  {
+    $const = 'ConstClass';
+    $errFlg = 0;
+    if ($pagename == "btn_confirm") {
+      if(strcmp($_POST["page"], $const::indexPage) != 0) {
+        $errFlg = 1;
+      }
+    }
+    if ($pagename == "btn_submit") {
+      if(strcmp($_POST["page"], $const::confirmPage) != 0) {
+        $errFlg = 1;
+      }
+    }
+    if($errFlg == 1) {
+      echo "<font color='red'>不正なページ操作が行われました。</font>";
+      echo "<br>";
+      exit;
+    }
+  }
 }
+
+  // 応募情報TBL登録処理
   function insData()
   {
     // 登録情報の設定

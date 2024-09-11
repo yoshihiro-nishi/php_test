@@ -99,7 +99,6 @@
         echo "※DBに接続できませんでした。";
       }
     ?>
-    <br>
   <br>
     履歴書<br>
     <input name="userfile" type="file" />
@@ -116,6 +115,7 @@
   <input type = "submit" name = "btn_confirm"  value = "入力内容の確認" >
   <br><br><br>
   
+  <input type = "hidden" name = "page" value = "0">
   </form>
 
 </body>

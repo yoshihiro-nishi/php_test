@@ -10,6 +10,7 @@
     応募が完了しました。
   <br><br>
   <input type = "submit" name = "btn_close" value = "閉じる">
+  <input type = "hidden" name = "page" value = "2">
   </form>
 </body>
 </html>
