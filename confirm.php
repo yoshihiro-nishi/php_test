@@ -6,6 +6,7 @@
 <body>
   <font size='7'>採用応募確認画面</font>
   <form method = "POST" action="process.php" enctype="multipart/form-data">
+  <input type = "hidden" name = "page" value = "1">
   <br><br>
     名前　：　
   <?php echo $_SESSION["user"] ;?>
@@ -62,7 +63,6 @@
       echo implode("、", $_SESSION["jobs"]);
     } ;?>">
   <input type = "hidden" name = "etc" value = "<?php echo $_SESSION["etc"] ;?>">
-  <input type = "hidden" name = "page" value = "1">
   </form>
 </body>
 </html>
