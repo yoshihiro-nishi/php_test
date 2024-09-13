@@ -7,6 +7,7 @@
   
   <font size='7'>採用応募入力画面</font>
   <form method = "POST" action="process.php" enctype="multipart/form-data">
+  <input type = "hidden" name = "page" value = "0">
   <br>
     名前<br>
   <input type="text" placeholder="名前を入力" name="user" value ="<?php if(!empty($_SESSION["user"])){echo $_SESSION["user"];}?>">
@@ -115,7 +116,6 @@
   <input type = "submit" name = "btn_confirm"  value = "入力内容の確認" >
   <br><br><br>
   
-  <input type = "hidden" name = "page" value = "0">
   </form>
 
 </body>
