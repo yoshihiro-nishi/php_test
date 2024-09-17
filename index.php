@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<meta charset = "utf-8">
+<html lang="ja">
 
-<head></head>
+<head>
+  <meta charset = "utf-8">
+</head>
 
 <body>
-  
   <font size='7'>採用応募入力画面</font>
   <form method = "POST" action="process.php" enctype="multipart/form-data">
   <input type = "hidden" name = "page" value = "0">

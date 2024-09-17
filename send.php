@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<meta charset = "utf-8">
+<html lang="ja">
 
-<head></head>
+<head>
+  <meta charset = "utf-8">
+</head>
 
 <body>
   <font size='7'>採用応募完了画面</font>
