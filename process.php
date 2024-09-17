@@ -21,14 +21,14 @@ class BtnClass
     // 確認ボタン押下
     if(!empty($_POST["btn_confirm"])) {
     
-      $validate = new Validate();
-      $validate -> checkFromPage("btn_confirm");
+      $validator = new Validator();
+      $validator -> checkFromPage("btn_confirm");
       
       $sessionAction = new SessionAction();
       $sessionAction -> clearSessionAllData();
       $sessionAction -> setSessionAllData();
       
-      $errors = $validate -> validateCheck();
+      $errors = $validator -> validateCheck();
       
       if (count($errors) != 0) {
         // エラーがある場合、赤文字でエラーを表示
@@ -58,9 +58,9 @@ class BtnClass
     // 応募するボタン押下
     else if(!empty($_POST["btn_submit"])) {
   
-      $validate = new Validate();
-      $validate -> checkFromPage("btn_submit");
-      $errors   = $validate -> validateCheck();
+      $validator = new Validator();
+      $validator -> checkFromPage("btn_submit");
+      $errors   = $validator -> validateCheck();
       
       if (count($errors) != 0) {
         for( $i = 0; $i < count($errors); $i++ ) {
@@ -167,185 +167,198 @@ class SessionAction
   }
 }
 
-class validate
+class Validator
 {
+
+  
+  private $errors = [];
+
+
  /**
   * チェック処理
   *
   * @return array  $errors  エラーメッセージ。
   */
-  function validateCheck() : array
+  function validateCheck()
   {
-    $errors              = array();
-   
     $user_name           = "名前";
     $user                = $_SESSION["user"];
-    $errors              = $this -> checkEmpty($user, $user_name, $errors);
-    $errors              = $this -> checkLength($user, $user_name, 60, $errors);
+    $this->errors              = $this -> checkEmpty($user, $user_name);
+    $this->errors              = $this -> checkLength($user, $user_name, 60);
    
     $user_kana_name      = "名前（カナ）";
     $user_kana           = $_SESSION["user_kana"];
-    $errors              = $this -> checkEmpty($user_kana, $user_kana_name, $errors);
-    $errors              = $this -> checkLength($user_kana, $user_kana_name, 60, $errors);
-    $errors              = $this -> checkKana($user_kana, $user_kana_name, $errors);
+    $this->errors              = $this -> checkEmpty($user_kana, $user_kana_name);
+    $this->errors              = $this -> checkLength($user_kana, $user_kana_name, 60);
+    $this->errors              = $this -> checkKana($user_kana, $user_kana_name);
 
     $gender_name         = "性別";
     $gender              = $_SESSION["gender"];
-    $errors              = $this -> checkGender($gender, $gender_name, $errors);
+    $this->errors              = $this -> checkGender($gender, $gender_name);
     
     $birthday_name       = "生年月日";
     $birthday            = $_SESSION["birthday"];
-    $errors              = $this -> checkBirthday($birthday, $birthday_name, $errors);
+    $this->errors              = $this -> checkBirthday($birthday, $birthday_name);
     
     $education_name      = "最終学歴";
     $education           = $_SESSION["education"];
-    $errors              = $this -> checkTblData($education, $education_name, "education_mst", "education_name", $errors);
+    $this->errors              = $this -> checkTblData($education, $education_name, "education_mst", "education_name");
     
     $postcode_name       = "郵便番号";
     $postcode            = mb_convert_kana($_SESSION["postcode"], 'a', 'UTF-8'); // 全角の場合、半角に変換
-    $errors              = $this -> checkPostcode($postcode,$postcode_name, $errors);
+    $this->errors              = $this -> checkPostcode($postcode,$postcode_name);
     
     $prefecture_name     = "都道府県";
     $prefecture          = $_SESSION["prefecture"];
-    $errors              = $this -> checkEmpty($prefecture, $prefecture_name, $errors);
-    $errors              = $this -> checkTblData($prefecture, $prefecture_name, "prefecture_mst", "prefecture_name", $errors);
+    $this->errors              = $this -> checkEmpty($prefecture, $prefecture_name);
+    $this->errors              = $this -> checkTblData($prefecture, $prefecture_name, "prefecture_mst", "prefecture_name");
     
     $city_name           = "市区町村";
     $city                = $_SESSION["city"];
-    $errors              = $this -> checkEmpty($city, $city_name, $errors);
-    $errors              = $this -> checkLength($city,$city_name, 100, $errors);
+    $this->errors              = $this -> checkEmpty($city, $city_name);
+    $this->errors              = $this -> checkLength($city,$city_name, 100);
     
     $email_name          = "メールアドレス";
     $email               = $_SESSION["email"];
-    $errors              = $this -> checkEmpty($email, $email_name, $errors);
-    $errors              = $this -> checkLength($email,$email_name, 100, $errors);
-    $errors              = $this -> checkMailFormat($email, $email_name, $errors);
+    $this->errors              = $this -> checkEmpty($email, $email_name);
+    $this->errors              = $this -> checkLength($email,$email_name, 100);
+    $this->errors              = $this -> checkMailFormat($email, $email_name);
         
     $job_name            = "希望職種";
     $job                 = $_SESSION["jobs"];
-    $errors              = $this -> checkJob($job, $job_name, $errors);
+    $this->errors              = $this -> checkJob($job, $job_name);
         
     
     $userfile_name       = "履歴書";
     $userfile            = $_SESSION["file"];
-    $errors              = $this -> checkFile($userfile, $userfile_name, $errors);
+    $this->errors              = $this -> checkFile($userfile, $userfile_name);
     
     $etc_name            = "その他要望など";
     $etc                 = $_SESSION["etc"];
-    $errors              = $this -> checkLength($etc,$etc_name, 2000, $errors);
+    $this->errors              = $this -> checkLength($etc,$etc_name, 2000);
 
     $privacy_policy_name = "プライバシーポリシー";
 
     if (!isset($_SESSION['privacy_policy'])) {
-      $errors[]          = "$privacy_policy_name は同意しないと応募できません。";
+      $this->errors[]          = "$privacy_policy_name は同意しないと応募できません。";
     }
 
-    return $errors;
+    return $this->errors;
+  }
+
+  public function getResult()
+  {
+      return $this->errors;
+  }
+
+  public function hasError()
+  {
+      return count($this->errors) > 0;
   }
 
   // 必須チェック
-  function checkEmpty($val, $valname, $errors) : array
+  function checkEmpty($val, $valname)
   {
     if (empty($val)) {
-      $errors[] = "$valname は必須です。";
+        $this->errors[] = "$valname は必須です。";
     }
-    return $errors;
+    return $this->errors;
   }
 
   // 桁数チェック
-  function checkLength($val, $valname, $length, $errors) : array
+  function checkLength($val, $valname, $length)
   {
     if(mb_strlen ($val) > $length) {
-      $errors[] = "$valname は $length 桁以下で入力してください。";
+      $this->errors[] = "$valname は $length 桁以下で入力してください。";
     }
-    return $errors;
+  return $this->errors;
   }
 
   // カタカナチェック
-  function checkKana($val, $valname, $errors) : array
+  function checkKana($val, $valname)
   {
     if (!empty($val)) {
       if (!preg_match("/\A[ァ-ヿ]+\z/u", $val)) {
-        $errors[] = "$valname はカタカナで入力してください。";
+        $this->errors[] = "$valname はカタカナで入力してください。";
       }
     }
-    return $errors;
+    return $this->errors;
   }
 
   // 性別チェック
-  function checkGender($val, $valname, $errors) : array
+  function checkGender($val, $valname)
   {
     if(isset($val)) {
       if(!($val == 1 or $val == 2)) {
-        $errors[] = "$valname の形式が不正です。";
+        $this->errors[] = "$valname の形式が不正です。";
       }
     } else {
-      $errors[]   = "$valname は必須です。";
+      $this->errors[]   = "$valname は必須です。";
     }
-    return $errors;
+    return $this->errors;
   }
   
   // メールアドレスフォーマットチェック
-  function checkMailFormat($val, $valname, $errors) : array
+  function checkMailFormat($val, $valname)
   {
     if (!empty($val)) {
       if (!filter_var($val, FILTER_VALIDATE_EMAIL)) {
-        $errors[]   = "$valname の形式が不正です。";
+        $this->errors[]   = "$valname の形式が不正です。";
       }
       for( $i = 0; $i < strlen($val); $i++ ) {
         if(ctype_upper(mb_substr($val,$i,1))) {
-          $errors[] = "$valname は小文字で入力してください。";
+          $this->errors[] = "$valname は小文字で入力してください。";
           break;
         }
       }
     }
     
-    return $errors;
+    return $this->errors;
   }
 
   // 生年月日チェック
-  function checkBirthday($val, $valname, $errors) : array
+  function checkBirthday($val, $valname)
   {
-    $errors   = $this -> checkEmpty($val, $valname, $errors);
+    $this->errors   = $this -> checkEmpty($val, $valname);
 
     if(!empty($val)) {
-      $errors = $this -> checkDateFormat($val, $valname, $errors);
-      $errors = $this -> checkExistDate($val, $valname, $errors);
+      $this->errors = $this -> checkDateFormat($val, $valname);
+      $this->errors = $this -> checkExistDate($val, $valname);
     }    
-    return $errors;
+    return $this->errors;
   }
   
   // 日付フォーマットチェック
-  function checkDateFormat($val, $valname, $errors) : array
+  function checkDateFormat($val, $valname)
   {
     if(preg_match('/\A[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}\z/', $val) == false) {
-      $errors[] = "$valname の形式が不正です。";
+      $this->errors[] = "$valname の形式が不正です。";
     }
-    return $errors;
+    return $this->errors;
   }
   
   // 日付存在チェック
-  function checkExistDate($val, $valname, $errors) : array
+  function checkExistDate($val, $valname)
   {
     list($year, $month, $day) = explode('-', $val);
 
     if(checkdate($month, $day, $year) == false) {
-      $errors[] = "$valname の日付は存在しません。";
+      $this->errors[] = "$valname の日付は存在しません。";
     }
-    return $errors;
+    return $this->errors;
   }
   
   // 郵便番号チェック
-  function checkPostcode($val, $valname, $errors) : array
+  function checkPostcode($val, $valname)
   {
-    $errors       = $this -> checkEmpty($val, $valname, $errors);
+    $this->errors       = $this -> checkEmpty($val, $valname);
     
     if(!empty($val)) {
-      $errors     = $this -> checkLength($val,$valname, 8, $errors);
+      $this->errors     = $this -> checkLength($val,$valname, 8);
   
       // 郵便番号フォーマットチェック
       if (!preg_match("/\A\d{3}[-]\d{4}\z/", $val)) {
-        $errors[] = "$valname の書式に誤りがあります。";
+        $this->errors[] = "$valname の書式に誤りがあります。";
       }
   
       // 郵便番号存在チェック
@@ -354,18 +367,18 @@ class validate
       $data       = json_decode($response, true);
       
       if ($data['code'] !== 200) {
-        $errors[] = "存在しない$valname が設定されています。";
+        $this->errors[] = "存在しない$valname が設定されています。";
       }
     }
 
-    return $errors;
+    return $this->errors;
   }
   
   // ファイル項目チェック
-  function checkFile($file, $file_name, $errors) : array
+  function checkFile($file, $file_name)
   {
     if(strcmp($file['size'], 0) == 0) {
-      $errors[]   = "$file_name は必須です。";
+      $this->errors[]   = "$file_name は必須です。";
     }
     else {
       // ファイル形式チェック
@@ -373,32 +386,32 @@ class validate
             str_ends_with($file['name'], ".PDF") or
             str_ends_with($file['name'], ".docx") or
             str_ends_with($file['name'], ".DOCX"))) {
-        $errors[] = "$file_name はpdf、もしくはdocxの形式でアップロードしてください。";
+              $this->errors[] = "$file_name はpdf、もしくはdocxの形式でアップロードしてください。";
       }
   
       // ファイルサイズチェック
       else if ($file['size'] > 1048576) {
-        $errors[] = "$file_name のファイルサイズは1MB以下でアップロードしてください。";
+        $this->errors[] = "$file_name のファイルサイズは1MB以下でアップロードしてください。";
       }
     }
-    return $errors;
+    return $this->errors;
   }
 
   // 職種チェック
-  function checkJob($val, $valname, $errors) : array
+  function checkJob($val, $valname)
   {
     if (isset($val)) {
       for( $i = 0; $i < count($val); $i++ ) {
-        $errors = $this -> checkTblData($val[$i], $valname, "job_mst", "job_name", $errors);
+        $this->errors = $this -> checkTblData($val[$i], $valname, "job_mst", "job_name");
       }
     } else {
-      $errors[] = "$valname は必須です。";
+      $this->errors[] = "$valname は必須です。";
     }
-    return $errors;
+    return $this->errors;
   }
 
   // マスタデータの存在チェック
-  function checkTblData($val, $valname, $tblname, $column, $errors) : array
+  function checkTblData($val, $valname, $tblname, $column)
   {
     $pdo          = new PDO("mysql:host=localhost;dbname=localtestdb", "root", "");
     $sql          = "SELECT COUNT(*) AS cnt FROM $tblname WHERE $column = '$val'";
@@ -407,9 +420,9 @@ class validate
     $educationRow = $education -> fetch(PDO::FETCH_ASSOC );
 
     if($educationRow['cnt'] == 0) {
-      $errors[]   = "存在しない $valname が設定されています。";
+      $this->errors[]   = "存在しない $valname が設定されています。";
     }
-    return $errors;
+    return $this->errors;
   }
 
   // 遷移元画面チェック
