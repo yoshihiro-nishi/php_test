@@ -1,0 +1,45 @@
+.main {
+  color: black;
+  background-color: rgb(240, 255, 209);
+  width: 600px;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  position: relative;
+  left: 10px;
+}
+#title {
+  color: red;
+  font-size: 30px;
+}
+#item {
+  font-size: medium;
+  display: flex;
+}
+#itemval {
+  font-size: medium;
+  margin-bottom:30px;
+}
+#prefecture {
+  font-size: medium;
+}
+#city {
+  font-size: medium;
+  margin-bottom:30px;
+}
+#confitem {
+  font-size: medium;
+  display: flex;
+}
+#confitemval {
+  font-size: medium;
+  margin-bottom:30px;
+  display: flex;
+  position: relative;
+  left: 20px;
+}
+#confpost {
+  font-size: medium;
+  display: flex;
+  position: relative;
+  left: 20px;
+}

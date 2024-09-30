@@ -23,7 +23,7 @@ class BtnClass
       if($validator->outputError()) {
         // 履歴書ファイルをアップロードする
         $userfileUpPass = "C:\\testfile\\". date('YmdHis') . "_" .$_SESSION["file"]["name"];
-        move_uploaded_file( $_SESSION["file"]["tmp_name"], $userfileUpPass ); // 「C:\testfile\日付_ファイル名」に保存する
+        move_uploaded_file( $_SESSION["file"]["tmp_name"], $userfileUpPass ); // 「C:\testfile\日付_ファイル名」で保存する
         $_SESSION['userfileUpPass'] = $userfileUpPass;
     
         require_once('confirm.php');
@@ -41,17 +41,15 @@ class BtnClass
     else if(!empty($_POST["btn_submit"])) {
       if($validator->outputError()) {
         // 応募情報登録
-        $insClass = new InsClass();
-        $return = $insClass->insData();
-        ;
+        $insDataClass = new InsDataClass();
+        $return = $insDataClass->insData();
     
         if ($return) {
           require_once('send.php');
           
         }
         else {
-          echo "<font color='red'>DB登録時にエラーが発生しました。</font>";
-          echo "<br>";
+          echo "<font color='red'>DB登録時にエラーが発生しました。</font><br>";
           exit;
         }
       }
@@ -66,8 +64,7 @@ class BtnClass
     }
 
     else {
-      echo "<font color='red'>不正なページ操作が行われました。</font>";
-      echo "<br>";
+      echo "<font color='red'>不正なページ操作が行われました。</font><br>";
       exit;
     }
   }
@@ -159,7 +156,7 @@ class ValidatorClass
   */
   public function getResult()
   {
-      return $this->errors;
+    return $this->errors;
   }
 
  /**
@@ -184,8 +181,7 @@ class ValidatorClass
     // エラーがある場合、赤文字でエラーを表示
     if ($this->hasError()) {
       for( $i = 0; $i < count($this->getResult()); $i++ ) {
-        echo "<font color='red'>{$this->getResult()[$i]}</font>";
-        echo "<br>";
+        echo "<font color='red'>{$this->getResult()[$i]}</font><br>";
       }
       require_once('index.php');
       return false;
@@ -201,59 +197,59 @@ class ValidatorClass
   {
     $user_name           = "名前";
     $user                = $_SESSION["user"];
-    $this->errors        = $this->checkEmpty($user, $user_name);
-    $this->errors        = $this->checkLength($user, $user_name, 60);
+    $this->checkEmpty($user, $user_name);
+    $this->checkLength($user, $user_name, 60);
    
     $user_kana_name      = "名前（カナ）";
     $user_kana           = $_SESSION["user_kana"];
-    $this->errors        = $this->checkEmpty($user_kana, $user_kana_name);
-    $this->errors        = $this->checkLength($user_kana, $user_kana_name, 60);
-    $this->errors        = $this->checkKana($user_kana, $user_kana_name);
+    $this->checkEmpty($user_kana, $user_kana_name);
+    $this->checkLength($user_kana, $user_kana_name, 60);
+    $this->checkKana($user_kana, $user_kana_name);
 
     $gender_name         = "性別";
     $gender              = $_SESSION["gender"];
-    $this->errors        = $this->checkGender($gender, $gender_name);
+    $this->checkGender($gender, $gender_name);
     
     $birthday_name       = "生年月日";
     $birthday            = $_SESSION["birthday"];
-    $this->errors        = $this->checkBirthday($birthday, $birthday_name);
+    $this->checkBirthday($birthday, $birthday_name);
     
     $education_name      = "最終学歴";
     $education           = $_SESSION["education"];
-    $this->errors        = $this->checkTblData($education, $education_name, "education_mst", "education_name");
+    $this->checkTblData($education, $education_name, "education_mst", "education_name");
     
     $postcode_name       = "郵便番号";
     $postcode            = mb_convert_kana($_SESSION["postcode"], 'a', 'UTF-8'); // 全角の場合、半角に変換
-    $this->errors        = $this->checkPostcode($postcode,$postcode_name);
+    $this->checkPostcode($postcode,$postcode_name);
     
     $prefecture_name     = "都道府県";
     $prefecture          = $_SESSION["prefecture"];
-    $this->errors        = $this->checkEmpty($prefecture, $prefecture_name);
-    $this->errors        = $this->checkTblData($prefecture, $prefecture_name, "prefecture_mst", "prefecture_name");
+    $this->checkEmpty($prefecture, $prefecture_name);
+    $this->checkTblData($prefecture, $prefecture_name, "prefecture_mst", "prefecture_name");
     
     $city_name           = "市区町村";
     $city                = $_SESSION["city"];
-    $this->errors        = $this->checkEmpty($city, $city_name);
-    $this->errors        = $this->checkLength($city,$city_name, 100);
+    $this->checkEmpty($city, $city_name);
+    $this->checkLength($city,$city_name, 100);
     
     $email_name          = "メールアドレス";
     $email               = $_SESSION["email"];
-    $this->errors        = $this->checkEmpty($email, $email_name);
-    $this->errors        = $this->checkLength($email,$email_name, 100);
-    $this->errors        = $this->checkMailFormat($email, $email_name);
+    $this->checkEmpty($email, $email_name);
+    $this->checkLength($email,$email_name, 100);
+    $this->checkMailFormat($email, $email_name);
         
     $job_name            = "希望職種";
     $job                 = $_SESSION["jobs"];
-    $this->errors        = $this->checkJob($job, $job_name);
+    $this->checkJob($job, $job_name);
         
     
     $userfile_name       = "履歴書";
     $userfile            = $_SESSION["file"];
-    $this->errors        = $this->checkFile($userfile, $userfile_name);
+    $this->checkFile($userfile, $userfile_name);
     
     $etc_name            = "その他要望など";
     $etc                 = $_SESSION["etc"];
-    $this->errors        = $this->checkLength($etc,$etc_name, 2000);
+    $this->checkLength($etc,$etc_name, 2000);
 
     $privacy_policy_name = "プライバシーポリシー";
 
@@ -265,33 +261,28 @@ class ValidatorClass
  /**
   * 必須チェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkEmpty($val, $valname)
   {
     if (empty($val)) {
         $this->errors[] = "$valname は必須です。";
     }
-    return $this->errors;
   }
 
  /**
   * 桁数チェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkLength($val, $valname, $length)
   {
     if(mb_strlen ($val) > $length) {
       $this->errors[] = "$valname は $length 桁以下で入力してください。";
     }
-  return $this->errors;
   }
 
  /**
   * カタカナチェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkKana($val, $valname)
   {
@@ -300,13 +291,11 @@ class ValidatorClass
         $this->errors[] = "$valname はカタカナで入力してください。";
       }
     }
-    return $this->errors;
   }
 
  /**
   * 性別チェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkGender($val, $valname)
   {
@@ -317,13 +306,11 @@ class ValidatorClass
     } else {
       $this->errors[]   = "$valname は必須です。";
     }
-    return $this->errors;
   }
 
  /**
   * メールアドレスフォーマットチェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkMailFormat($val, $valname)
   {
@@ -338,43 +325,36 @@ class ValidatorClass
         }
       }
     }
-    
-    return $this->errors;
   }
 
  /**
   * 生年月日チェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkBirthday($val, $valname)
   {
-    $this->errors   = $this->checkEmpty($val, $valname);
+    $this->checkEmpty($val, $valname);
 
     if(!empty($val)) {
-      $this->errors = $this->checkDateFormat($val, $valname);
-      $this->errors = $this->checkExistDate($val, $valname);
-    }    
-    return $this->errors;
+      $this->checkDateFormat($val, $valname);
+      $this->checkExistDate($val, $valname);
+    }
   }
 
  /**
   * 日付フォーマットチェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkDateFormat($val, $valname)
   {
     if(preg_match('/\A[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}\z/', $val) == false) {
       $this->errors[] = "$valname の形式が不正です。";
     }
-    return $this->errors;
   }
 
  /**
   * 日付存在チェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkExistDate($val, $valname)
   {
@@ -383,20 +363,18 @@ class ValidatorClass
     if(checkdate($month, $day, $year) == false) {
       $this->errors[] = "$valname の日付は存在しません。";
     }
-    return $this->errors;
   }
 
  /**
   * 郵便番号チェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkPostcode($val, $valname)
   {
-    $this->errors       = $this->checkEmpty($val, $valname);
+    $this->checkEmpty($val, $valname);
     
     if(!empty($val)) {
-      $this->errors     = $this->checkLength($val,$valname, 8);
+      $this->checkLength($val,$valname, 8);
   
       // 郵便番号フォーマットチェック
       if (!preg_match("/\A\d{3}[-]\d{4}\z/", $val)) {
@@ -404,22 +382,30 @@ class ValidatorClass
       }
   
       // 郵便番号存在チェック
-      $url        = "https://api.zipaddress.net/?zipcode={$val}";
-      $response   = file_get_contents($url);
-      $data       = json_decode($response, true);
-      
-      if ($data['code'] !== 200) {
+      $errFlg = false;
+      $readCsvClass = new ReadCsvClass();
+      $PostcodeList = $readCsvClass->readPostcodeCsv();
+  
+      // 配列の値を繰り返し処理で表示する
+      foreach($PostcodeList as $value){
+        // 1行のデータをコンマで分割する
+        $data = explode(',', $value);
+
+        if(strpos($data[2], str_replace("-","",$val)) !== false) {
+          $errFlg = true;
+          break;
+        }
+      }
+
+      if ($errFlg == false) {
         $this->errors[] = "存在しない$valname が設定されています。";
       }
     }
-
-    return $this->errors;
   }
 
  /**
   * ファイル項目チェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkFile($file, $file_name)
   {
@@ -440,30 +426,26 @@ class ValidatorClass
         $this->errors[] = "$file_name のファイルサイズは1MB以下でアップロードしてください。";
       }
     }
-    return $this->errors;
   }
 
  /**
   * 職種チェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkJob($val, $valname)
   {
     if (isset($val)) {
       for( $i = 0; $i < count($val); $i++ ) {
-        $this->errors = $this->checkTblData($val[$i], $valname, "job_mst", "job_name");
+        $this->checkTblData($val[$i], $valname, "job_mst", "job_name");
       }
     } else {
       $this->errors[] = "$valname は必須です。";
     }
-    return $this->errors;
   }
 
  /**
   * マスタデータの存在チェック
   *
-  * @return array  エラーメッセージ
   */
   public function checkTblData($val, $valname, $tblname, $column)
   {
@@ -476,15 +458,29 @@ class ValidatorClass
     if($educationRow['cnt'] == 0) {
       $this->errors[]   = "存在しない $valname が設定されています。";
     }
-    return $this->errors;
   }
 }
 
-class InsClass
+class ReadCsvClass
+{
+ /**
+  * 郵便番号CSV読み込み処理
+  *
+  * @return array CSV配列
+  */
+  public function readPostcodeCsv()
+  {
+    // CSVファイルを読み込む
+    return file('./KEN_ALL.CSV');
+  }
+}
+
+class InsDataClass
 {
  /**
   * 応募情報TBL登録処理
   *
+  * @return bool 登録成功／登録失敗
   */
   public function insData()
   {

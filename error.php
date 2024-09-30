@@ -2,8 +2,9 @@
 <html lang="ja">
   <head>
     <meta charset = "utf-8">
+    <link rel="stylesheet" href="style.css">
   </head>
-  <body>
-    <font size='7'>HTTP 500</font>
+  <body class="main">
+    <font id="title">HTTP 500</font>
   </body>
 </html>
