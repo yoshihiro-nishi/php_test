@@ -94,7 +94,7 @@ class SessionActionClass
   }
   
  /**
-  * セッションデータの設定、サニタイズ
+  * セッションデータの設定、エスケープ
   *
   */
   public function setSessionData($valname) : void
@@ -449,13 +449,14 @@ class ValidatorClass
   */
   public function checkTblData($val, $valname, $tblname, $column)
   {
-    $pdo          = new PDO("mysql:host=localhost;dbname=localtestdb", "root", "");
-    $sql          = "SELECT COUNT(*) AS cnt FROM $tblname WHERE $column = '$val'";
-    $education    = $pdo->prepare($sql);
-    $education   ->execute();
-    $educationRow = $education->fetch(PDO::FETCH_ASSOC );
+    $pdo  = new PDO("mysql:host=localhost;dbname=localtestdb", "root", "");
+    $sql  = "SELECT COUNT(*) AS cnt FROM $tblname WHERE $column = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt -> bindValue(1, $val, PDO::PARAM_STR);
+    $stmt -> execute();
+    $row  = $stmt->fetch(PDO::FETCH_ASSOC );
 
-    if($educationRow['cnt'] == 0) {
+    if($row['cnt'] == 0) {
       $this->errors[]   = "存在しない $valname が設定されています。";
     }
   }
